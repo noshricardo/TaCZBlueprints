@@ -1,8 +1,9 @@
 package com.raiiiden.taczblueprints.mixin;
 
 import com.raiiiden.taczblueprints.TaCZBlueprints;
-import com.raiiiden.taczblueprints.capability.GunUnlocksProvider;
-import com.raiiiden.taczblueprints.capability.IGunUnlocks;
+import com.raiiiden.taczblueprints.attachment.GunUnlocksProvider;
+import com.raiiiden.taczblueprints.attachment.IGunUnlocks;
+import com.raiiiden.taczblueprints.attachment.ModAttachmentTypes;
 import com.raiiiden.taczblueprints.config.BlueprintConfig;
 import com.tacz.guns.client.gui.GunSmithTableScreen;
 import com.tacz.guns.crafting.GunSmithTableRecipe;
@@ -10,13 +11,17 @@ import com.tacz.guns.api.item.IAttachment;
 import com.tacz.guns.api.item.IAmmo;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -49,9 +54,9 @@ public class MixinGunSmithTableScreen {
             if (recipes == null) return;
 
             RecipeManager recipeManager = mc.level.getRecipeManager();
-            LazyOptional<IGunUnlocks> unlocksCap = mc.player.getCapability(GunUnlocksProvider.UNLOCKS);
+            IGunUnlocks unlocks = mc.player.getData(ModAttachmentTypes.GUN_UNLOCKS);
 
-            unlocksCap.ifPresent(unlocks -> {
+
                 Set<String> unlockedGuns = unlocks.getUnlockedGuns();
                 List<String> enabledGuns = BlueprintConfig.SERVER.getEnabledGuns();
                 List<String> enabledAttachments = BlueprintConfig.SERVER.getEnabledAttachments();
@@ -67,7 +72,7 @@ public class MixinGunSmithTableScreen {
                 while (it.hasNext()) {
                     ResourceLocation recipeId = it.next();
                     var recipeOpt = recipeManager.byKey(recipeId);
-                    if (recipeOpt.isEmpty() || !(recipeOpt.get() instanceof GunSmithTableRecipe gunRecipe)) {
+                    if (recipeOpt.isEmpty() || !(recipeOpt.get().value() instanceof GunSmithTableRecipe gunRecipe)) {
                         it.remove();
                         removedCount++;
                         continue;
@@ -75,24 +80,26 @@ public class MixinGunSmithTableScreen {
 
                     ItemStack out = gunRecipe.getOutput();
                     Item item = out.getItem();
-                    ResourceLocation baseItemId = ForgeRegistries.ITEMS.getKey(item);
+                    ResourceLocation baseItemId = BuiltInRegistries.ITEM.getKey(item);
                     String baseItem = baseItemId == null ? "null" : baseItemId.toString();
 
-                    CompoundTag tag = out.getTag();
+                    CustomData customData = out.get(DataComponents.CUSTOM_DATA);
+
+                    CompoundTag tag = customData != null ? customData.copyTag() : null;
                     String nbtGunId = (tag != null && tag.contains("GunId")) ? tag.getString("GunId") : null;
 
                     // Normalize gun ID
                     String normalizedGunId = null;
                     if (nbtGunId != null && !nbtGunId.isEmpty()) {
-                        ResourceLocation rl = new ResourceLocation(nbtGunId);
+                        ResourceLocation rl =ResourceLocation.parse(nbtGunId);
                         String path = rl.getPath();
                         if (!path.startsWith("gun/")) path = "gun/" + path;
-                        normalizedGunId = new ResourceLocation(rl.getNamespace(), path).toString();
+                        normalizedGunId =ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), path).toString();
                     } else if (!"null".equals(baseItem)) {
-                        ResourceLocation rl = new ResourceLocation(baseItem);
+                        ResourceLocation rl =ResourceLocation.parse(baseItem);
                         String path = rl.getPath();
                         if (!path.startsWith("gun/")) path = "gun/" + path;
-                        normalizedGunId = new ResourceLocation(rl.getNamespace(), path).toString();
+                        normalizedGunId =ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), path).toString();
                     }
 
                     boolean remove = false;
@@ -123,8 +130,8 @@ public class MixinGunSmithTableScreen {
                 // Re-select recipe
                 try {
                     Object currentSelectedRecipe = selectedRecipeField.get(screen);
-                    if (currentSelectedRecipe instanceof GunSmithTableRecipe currentRecipe) {
-                        if (recipes.contains(currentRecipe.getId())) return;
+                    if (currentSelectedRecipe instanceof RecipeHolder<?> currentRecipe) {
+                        if (recipes.contains(currentRecipe.id())) return;
                     }
 
                     if (recipes.isEmpty()) {
@@ -139,7 +146,7 @@ public class MixinGunSmithTableScreen {
                 } catch (ReflectiveOperationException e) {
                     TaCZBlueprints.LOGGER.error("[Blueprint] Error updating selected recipe", e);
                 }
-            });
+
 
         } catch (Exception e) {
             TaCZBlueprints.LOGGER.error("[Blueprint] classifyRecipes mixin failed", e);

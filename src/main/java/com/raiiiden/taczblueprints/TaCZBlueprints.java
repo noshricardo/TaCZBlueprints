@@ -1,15 +1,17 @@
 package com.raiiiden.taczblueprints;
 
+import com.raiiiden.taczblueprints.attachment.ModAttachmentTypes;
 import com.raiiiden.taczblueprints.config.BlueprintConfig;
 import com.raiiiden.taczblueprints.item.BlueprintRegistrar;
 import com.raiiiden.taczblueprints.loot.ModLootModifiers;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,37 +20,39 @@ public class TaCZBlueprints {
   public static final String MODID = "taczblueprints";
   public static final Logger LOGGER = LogManager.getLogger();
 
-  public TaCZBlueprints() {
+  public TaCZBlueprints(IEventBus modEventBus, ModContainer container) {
     LOGGER.info("[{}] TaCZ Blueprints mod initializing...", MODID);
 
     // Register items and creative tabs
-    BlueprintRegistrar.register();
+    BlueprintRegistrar.register(modEventBus);
 
     // Register loot modifiers (chest only, entity removed)
-    ModLootModifiers.register();
+    ModLootModifiers.register(modEventBus);
 
     // Log registered chest loot modifier
     LOGGER.info("[{}] Registered loot modifier type: {}", MODID, ModLootModifiers.BLUEPRINT_CHEST_LOOT.getId());
 
     // Register configs
-    ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, BlueprintConfig.SERVER_SPEC);
-    ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, BlueprintConfig.CLIENT_SPEC);
+    container.registerConfig(ModConfig.Type.SERVER, BlueprintConfig.SERVER_SPEC);
+    container.registerConfig(ModConfig.Type.CLIENT, BlueprintConfig.CLIENT_SPEC);
 
     // Event bus listeners
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
-    FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onConfigLoad);
+    modEventBus.addListener(this::commonSetup);
+    modEventBus.addListener(this::onConfigLoad);
 
     // Commands
-    MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
+    NeoForge.EVENT_BUS.addListener(this::registerCommands);
+
+    // Attachments
+    ModAttachmentTypes.ATTACHMENT_TYPES.register(modEventBus);
   }
 
   private void commonSetup(FMLCommonSetupEvent event) {
-    com.raiiiden.taczblueprints.network.ModNetworking.registerPackets();
     LOGGER.info("[{}] Common setup complete", MODID);
     // Config may not be loaded yet, dynamic loot handler will use safe defaults
   }
 
-  private void registerCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
+  private void registerCommands(RegisterCommandsEvent event) {
     event.getDispatcher().register(com.raiiiden.taczblueprints.command.BlueprintCommands.register());
   }
 

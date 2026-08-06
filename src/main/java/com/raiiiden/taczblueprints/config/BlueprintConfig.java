@@ -2,7 +2,7 @@ package com.raiiiden.taczblueprints.config;
 
 import com.raiiiden.taczblueprints.TaCZBlueprints;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
@@ -10,16 +10,16 @@ import java.util.*;
 public class BlueprintConfig {
 
     public static final Server SERVER;
-    public static final ForgeConfigSpec SERVER_SPEC;
+    public static final ModConfigSpec SERVER_SPEC;
     public static final Client CLIENT;
-    public static final ForgeConfigSpec CLIENT_SPEC;
+    public static final ModConfigSpec CLIENT_SPEC;
 
     static {
-        Pair<Server, ForgeConfigSpec> serverConfig = new ForgeConfigSpec.Builder().configure(Server::new);
+        Pair<Server, ModConfigSpec> serverConfig = new ModConfigSpec.Builder().configure(Server::new);
         SERVER = serverConfig.getLeft();
         SERVER_SPEC = serverConfig.getRight();
 
-        Pair<Client, ForgeConfigSpec> clientConfig = new ForgeConfigSpec.Builder().configure(Client::new);
+        Pair<Client, ModConfigSpec> clientConfig = new ModConfigSpec.Builder().configure(Client::new);
         CLIENT = clientConfig.getLeft();
         CLIENT_SPEC = clientConfig.getRight();
     }
@@ -29,34 +29,34 @@ public class BlueprintConfig {
     // ============================================================
     public static class Server {
         // === Table toggles ===
-        public final ForgeConfigSpec.BooleanValue enableGunTable;
-        public final ForgeConfigSpec.BooleanValue enableAttachmentTable;
-        public final ForgeConfigSpec.BooleanValue enableAmmoTable;
+        public final ModConfigSpec.BooleanValue enableGunTable;
+        public final ModConfigSpec.BooleanValue enableAttachmentTable;
+        public final ModConfigSpec.BooleanValue enableAmmoTable;
 
         // === Whitelists ===
-        public final ForgeConfigSpec.ConfigValue<List<? extends String>> enabledGuns;
-        public final ForgeConfigSpec.ConfigValue<List<? extends String>> enabledAttachments;
-        public final ForgeConfigSpec.ConfigValue<List<? extends String>> enabledAmmo;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> enabledGuns;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> enabledAttachments;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> enabledAmmo;
 
         // === Loot global defaults ===
-        public final ForgeConfigSpec.DoubleValue lootChestChance;
-        public final ForgeConfigSpec.IntValue lootChestMinCount;
-        public final ForgeConfigSpec.IntValue lootChestMaxCount;
+        public final ModConfigSpec.DoubleValue lootChestChance;
+        public final ModConfigSpec.IntValue lootChestMinCount;
+        public final ModConfigSpec.IntValue lootChestMaxCount;
 
         // === Weapon type weights ===
-        public final ForgeConfigSpec.IntValue weightPistol;
-        public final ForgeConfigSpec.IntValue weightSmg;
-        public final ForgeConfigSpec.IntValue weightRifle;
-        public final ForgeConfigSpec.IntValue weightShotgun;
-        public final ForgeConfigSpec.IntValue weightSniper;
-        public final ForgeConfigSpec.IntValue weightMg;
-        public final ForgeConfigSpec.IntValue weightRpg;
-        public final ForgeConfigSpec.IntValue weightDefault;
+        public final ModConfigSpec.IntValue weightPistol;
+        public final ModConfigSpec.IntValue weightSmg;
+        public final ModConfigSpec.IntValue weightRifle;
+        public final ModConfigSpec.IntValue weightShotgun;
+        public final ModConfigSpec.IntValue weightSniper;
+        public final ModConfigSpec.IntValue weightMg;
+        public final ModConfigSpec.IntValue weightRpg;
+        public final ModConfigSpec.IntValue weightDefault;
 
         // === Loot overrides per chest ===
-        public final ForgeConfigSpec.ConfigValue<List<? extends String>> lootTableOverrides;
+        public final ModConfigSpec.ConfigValue<List<? extends String>> lootTableOverrides;
 
-        public Server(ForgeConfigSpec.Builder builder) {
+        public Server(ModConfigSpec.Builder builder) {
             // ------------------------------
             // 🔹 Table toggles
             // ------------------------------
@@ -166,7 +166,7 @@ public class BlueprintConfig {
         public record LootOverride(float chance, int min, int max) {}
 
         // --- Get lists ---
-        private List<String> getList(ForgeConfigSpec.ConfigValue<List<? extends String>> value) {
+        private List<String> getList(ModConfigSpec.ConfigValue<List<? extends String>> value) {
             List<String> list = new ArrayList<>();
             for (Object obj : value.get()) list.add(String.valueOf(obj));
             return list;
@@ -198,7 +198,7 @@ public class BlueprintConfig {
                 try {
                     String[] split = entry.split("=");
                     if (split.length != 2) continue;
-                    ResourceLocation id = new ResourceLocation(split[0].trim());
+                    ResourceLocation id = ResourceLocation.parse(split[0].trim());
                     String[] vals = split[1].split(",");
                     if (vals.length < 3) continue;
 
@@ -219,6 +219,6 @@ public class BlueprintConfig {
     // === CLIENT CONFIG ==========================================
     // ============================================================
     public static class Client {
-        public Client(ForgeConfigSpec.Builder builder) {}
+        public Client(ModConfigSpec.Builder builder) {}
     }
 }

@@ -2,6 +2,7 @@ package com.raiiiden.taczblueprints.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import com.raiiiden.taczblueprints.TaCZBlueprints;
 import com.raiiiden.taczblueprints.item.GunBlueprintItem;
 import com.tacz.guns.api.TimelessAPI;
@@ -126,14 +127,15 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.translate(0.5f, 0.5f, 0.0f);
 
         if (rotateOverlay) {
-            poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-75F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-75F));
         }
 
         poseStack.scale(scale, scale, scale);
         poseStack.translate(-0.5f, -0.5f, 0.0f);
 
         Matrix4f matrix = poseStack.last().pose();
-        Matrix3f normalMatrix = poseStack.last().normal();
+        PoseStack.Pose normalMatrix = poseStack.last();
+
 
         float minX = 0.0f;
         float minY = 0.0f;
@@ -144,70 +146,62 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
         float u2 = flipOverlay ? 1.0f : 0.0f;
 
         // FRONT FACE
-        vertexConsumer.vertex(matrix, minX, minY, zLevel)
-                .color(255, 255, 255, 255)
-                .uv(u1, 1.0f)
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(normalMatrix, 0.0f, 0.0f, -1.0f)
-                .endVertex();
+        vertexConsumer.addVertex(matrix, minX, minY, zLevel)
+                .setColor(255, 255, 255, 255)
+                .setUv(u1, 1.0f)
+                .setOverlay(overlay)
+                .setUv2(light, 1)
+                .setNormal(normalMatrix, 0.0f, 0.0f, -1.0f);
 
-        vertexConsumer.vertex(matrix, maxX, minY, zLevel)
-                .color(255, 255, 255, 255)
-                .uv(u2, 1.0f)
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(normalMatrix, 0.0f, 0.0f, -1.0f)
-                .endVertex();
+        vertexConsumer.addVertex(matrix, maxX, minY, zLevel)
+                .setColor(255, 255, 255, 255)
+                .setUv(u2, 1.0f)
+                .setOverlay(overlay)
+                .setUv2(light, 1)
+                .setNormal(normalMatrix, 0.0f, 0.0f, -1.0f);
 
-        vertexConsumer.vertex(matrix, maxX, maxY, zLevel)
-                .color(255, 255, 255, 255)
-                .uv(u2, 0.0f)
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(normalMatrix, 0.0f, 0.0f, -1.0f)
-                .endVertex();
+        vertexConsumer.addVertex(matrix, maxX, maxY, zLevel)
+                .setColor(255, 255, 255, 255)
+                .setUv(u2, 0.0f)
+                .setOverlay(overlay)
+                .setUv2(light,1 )
+                .setNormal(normalMatrix, 0.0f, 0.0f, -1.0f);
 
-        vertexConsumer.vertex(matrix, minX, maxY, zLevel)
-                .color(255, 255, 255, 255)
-                .uv(u1, 0.0f)
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(normalMatrix, 0.0f, 0.0f, -1.0f)
-                .endVertex();
+        vertexConsumer.addVertex(matrix, minX, maxY, zLevel)
+                .setColor(255, 255, 255, 255)
+                .setUv(u1, 0.0f)
+                .setOverlay(overlay)
+                .setUv2(light,1 )
+                .setNormal(normalMatrix, 0.0f, 0.0f, -1.0f);
 
         // BACK FACE (reversed winding order)
-        vertexConsumer.vertex(matrix, minX, maxY, zLevel)
-                .color(255, 255, 255, 255)
-                .uv(u1, 0.0f)
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(normalMatrix, 0.0f, 0.0f, 1.0f)
-                .endVertex();
+        vertexConsumer.addVertex(matrix, minX, maxY, zLevel)
+                .setColor(255, 255, 255, 255)
+                .setUv(u1, 0.0f)
+                .setOverlay(overlay)
+                .setUv2(light, 1)
+                .setNormal(normalMatrix, 0.0f, 0.0f, 1.0f);
 
-        vertexConsumer.vertex(matrix, maxX, maxY, zLevel)
-                .color(255, 255, 255, 255)
-                .uv(u2, 0.0f)
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(normalMatrix, 0.0f, 0.0f, 1.0f)
-                .endVertex();
+        vertexConsumer.addVertex(matrix, maxX, maxY, zLevel)
+                .setColor(255, 255, 255, 255)
+                .setUv(u2, 0.0f)
+                .setOverlay(overlay)
+                .setUv2(light, 1)
+                .setNormal(normalMatrix, 0.0f, 0.0f, 1.0f);
 
-        vertexConsumer.vertex(matrix, maxX, minY, zLevel)
-                .color(255, 255, 255, 255)
-                .uv(u2, 1.0f)
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(normalMatrix, 0.0f, 0.0f, 1.0f)
-                .endVertex();
+        vertexConsumer.addVertex(matrix, maxX, minY, zLevel)
+                .setColor(255, 255, 255, 255)
+                .setUv(u2, 1.0f)
+                .setOverlay(overlay)
+                .setUv2(light, 1)
+                .setNormal(normalMatrix, 0.0f, 0.0f, 1.0f);
 
-        vertexConsumer.vertex(matrix, minX, minY, zLevel)
-                .color(255, 255, 255, 255)
-                .uv(u1, 1.0f)
-                .overlayCoords(overlay)
-                .uv2(light)
-                .normal(normalMatrix, 0.0f, 0.0f, 1.0f)
-                .endVertex();
+        vertexConsumer.addVertex(matrix, minX, minY, zLevel)
+                .setColor(255, 255, 255, 255)
+                .setUv(u1, 1.0f)
+                .setOverlay(overlay)
+                .setUv2(light, 1)
+                .setNormal(normalMatrix, 0.0f, 0.0f, 1.0f);
 
         poseStack.popPose();
     }
@@ -216,22 +210,22 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
         String itemName = stack.getItem().toString();
 
         if (itemName.contains("pistol")) {
-            return new ResourceLocation("taczblueprints", "textures/item/blueprint_pistol.png");
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_pistol.png");
         } else if (itemName.contains("smg")) {
-            return new ResourceLocation("taczblueprints", "textures/item/blueprint_smg.png");
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_smg.png");
         } else if (itemName.contains("rifle")) {
-            return new ResourceLocation("taczblueprints", "textures/item/blueprint_rifle.png");
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_rifle.png");
         } else if (itemName.contains("shotgun")) {
-            return new ResourceLocation("taczblueprints", "textures/item/blueprint_shotgun.png");
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_shotgun.png");
         } else if (itemName.contains("sniper")) {
-            return new ResourceLocation("taczblueprints", "textures/item/blueprint_sniper.png");
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_sniper.png");
         } else if (itemName.contains("mg")) {
-            return new ResourceLocation("taczblueprints", "textures/item/blueprint_mg.png");
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_mg.png");
         } else if (itemName.contains("rpg")) {
-            return new ResourceLocation("taczblueprints", "textures/item/blueprint_rpg.png");
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_rpg.png");
         }
 
-        return new ResourceLocation("taczblueprints", "textures/item/blueprint_default.png");
+        return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_default.png");
     }
 
     private ResourceLocation getGunSlotTexture(String gunId) {
@@ -253,11 +247,11 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     private static ResourceLocation getGunIdForLookup(String storedGunId) {
-        ResourceLocation rl = new ResourceLocation(storedGunId);
+        ResourceLocation rl =ResourceLocation.parse(storedGunId);
         String path = rl.getPath();
         if (path.startsWith("gun/")) {
             path = path.substring(4);
         }
-        return new ResourceLocation(rl.getNamespace(), path);
+        return ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), path);
     }
 }

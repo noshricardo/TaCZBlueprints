@@ -1,25 +1,41 @@
 package com.raiiiden.taczblueprints.network;
 
-import com.raiiiden.taczblueprints.TaCZBlueprints;
-import com.raiiiden.taczblueprints.capability.GunUnlocksProvider;
+import com.raiiiden.taczblueprints.attachment.GunUnlocksProvider;
+import com.raiiiden.taczblueprints.attachment.IGunUnlocks;
+import com.raiiiden.taczblueprints.attachment.ModAttachmentTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
-public record SyncUnlockedGunsPacket(Set<String> unlockedGuns) {
+public record SyncUnlockedGunsPacket(Set<String> unlockedGuns) implements CustomPacketPayload{
 
-    public static void encode(SyncUnlockedGunsPacket pkt, FriendlyByteBuf buf) {
-        buf.writeInt(pkt.unlockedGuns.size());
-        for (String gunId : pkt.unlockedGuns) {
-            buf.writeUtf(gunId);
-        }
-    }
+    public static final CustomPacketPayload.Type<SyncUnlockedGunsPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath("taczblueprints", "sync_unlocked_guns_packet")
+    );
 
+    public static final StreamCodec<RegistryFriendlyByteBuf, SyncUnlockedGunsPacket> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8),
+            SyncUnlockedGunsPacket::unlockedGuns,
+            SyncUnlockedGunsPacket::new
+    );
+
+//    public static void encode(SyncUnlockedGunsPacket pkt, FriendlyByteBuf buf) {
+//        buf.writeInt(pkt.unlockedGuns.size());
+//        for (String gunId : pkt.unlockedGuns) {
+//            buf.writeUtf(gunId);
+//        }
+//    }
+//
     public static SyncUnlockedGunsPacket decode(FriendlyByteBuf buf) {
         int size = buf.readInt();
         Set<String> guns = new HashSet<>();
@@ -29,30 +45,27 @@ public record SyncUnlockedGunsPacket(Set<String> unlockedGuns) {
         return new SyncUnlockedGunsPacket(guns);
     }
 
-    public static void handle(SyncUnlockedGunsPacket pkt, Supplier<NetworkEvent.Context> ctx) {
-        NetworkEvent.Context context = ctx.get();
+    public static void handle(SyncUnlockedGunsPacket pkt, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null) {
+                // TaCZBlueprints.LOGGER.warn("[Blueprint] Received sync packet but player is null!");
+                return;
+            }
+            // Wait for capability to be attached before updating
+            IGunUnlocks unlocks = mc.player.getData(ModAttachmentTypes.GUN_UNLOCKS);
+            unlocks.setUnlockedGuns(pkt.unlockedGuns);
+            // TaCZBlueprints.LOGGER.info("[Blueprint] Client synced {} unlocked guns", pkt.unlockedGuns.size());
 
-        if (context.getDirection() == NetworkDirection.PLAY_TO_CLIENT) {
-            context.enqueueWork(() -> {
-                Minecraft mc = Minecraft.getInstance();
-                if (mc.player == null) {
-                    // TaCZBlueprints.LOGGER.warn("[Blueprint] Received sync packet but player is null!");
-                    return;
-                }
+            // Debug log what was synced
+            if (!pkt.unlockedGuns.isEmpty()) {
+                // TaCZBlueprints.LOGGER.debug("[Blueprint] Unlocked guns: {}", pkt.unlockedGuns);
+            }
+        });
+    }
 
-                // Wait for capability to be attached before updating
-                mc.player.getCapability(GunUnlocksProvider.UNLOCKS).ifPresent(unlocks -> {
-                    unlocks.setUnlockedGuns(pkt.unlockedGuns);
-                    // TaCZBlueprints.LOGGER.info("[Blueprint] Client synced {} unlocked guns", pkt.unlockedGuns.size());
-
-                    // Debug log what was synced
-                    if (!pkt.unlockedGuns.isEmpty()) {
-                        // TaCZBlueprints.LOGGER.debug("[Blueprint] Unlocked guns: {}", pkt.unlockedGuns);
-                    }
-                });
-            });
-        }
-
-        context.setPacketHandled(true);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

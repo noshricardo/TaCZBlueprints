@@ -1,13 +1,14 @@
 package com.raiiiden.taczblueprints.item;
 
 import com.raiiiden.taczblueprints.TaCZBlueprints;
-import com.raiiiden.taczblueprints.capability.GunUnlocksProvider;
-import com.raiiiden.taczblueprints.capability.IGunUnlocks;
+import com.raiiiden.taczblueprints.attachment.GunUnlocksProvider;
+import com.raiiiden.taczblueprints.attachment.IGunUnlocks;
 import com.raiiiden.taczblueprints.network.ModNetworking;
 import com.raiiiden.taczblueprints.network.SyncUnlockedGunsPacket;
 import com.tacz.guns.resource.CommonAssetsManager;
 import com.tacz.guns.resource.index.CommonGunIndex;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -18,9 +19,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.common.util.LazyOptional;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -73,10 +74,9 @@ public class GunBlueprintItem extends Item {
 
             Component gunName = getGunDisplayName(storedGunId);
 
-            LazyOptional<IGunUnlocks> cap = GunUnlocksProvider.get(player);
-            cap.ifPresent(unlocks -> {
-                if (!unlocks.isUnlocked(gunIdForUnlock)) {
-                    unlocks.unlockGun(gunIdForUnlock);
+            IGunUnlocks cap = GunUnlocksProvider.get(player);
+                if (!cap.isUnlocked(gunIdForUnlock)) {
+                    cap.unlockGun(gunIdForUnlock);
                     player.displayClientMessage(
                             Component.literal("§aUnlocked gun: ").append(gunName),
                             true
@@ -85,7 +85,7 @@ public class GunBlueprintItem extends Item {
                     if (!player.isCreative()) stack.shrink(1);
 
                     if (player instanceof ServerPlayer serverPlayer) {
-                        ModNetworking.sendToPlayer(serverPlayer, new SyncUnlockedGunsPacket(unlocks.getUnlockedGuns()));
+                        ModNetworking.sendToPlayer(serverPlayer, new SyncUnlockedGunsPacket(cap.getUnlockedGuns()));
                     }
                 } else {
                     player.displayClientMessage(
@@ -93,7 +93,6 @@ public class GunBlueprintItem extends Item {
                             true
                     );
                 }
-            });
         }
         return InteractionResultHolder.success(stack);
     }
@@ -109,18 +108,18 @@ public class GunBlueprintItem extends Item {
         return Component.literal(gunType + " Blueprint");
     }
 
-    @Override
-    public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
-        String storedGunId = getGunId(stack);
-        if (storedGunId == null || storedGunId.isEmpty()) {
-            return;
-        }
-
-        Component gunDisplayName = tryGetGunDisplayName(storedGunId);
-        if (gunDisplayName != null) {
-            tooltip.add(gunDisplayName.copy().withStyle(style -> style.withColor(0x808080)));
-        }
-    }
+//    @Override
+//    public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
+//        String storedGunId = getGunId(stack);
+//        if (storedGunId == null || storedGunId.isEmpty()) {
+//            return;
+//        }
+//
+//        Component gunDisplayName = tryGetGunDisplayName(storedGunId);
+//        if (gunDisplayName != null) {
+//            tooltip.add(gunDisplayName.copy().withStyle(style -> style.withColor(0x808080)));
+//        }
+//    }
 
     private static Component tryGetGunDisplayName(String storedGunId) {
         try {
@@ -165,7 +164,9 @@ public class GunBlueprintItem extends Item {
     }
 
     public static String getGunId(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+
+        CompoundTag tag = customData != null ? customData.copyTag() : null;
         if (tag != null && tag.contains("GunId")) {
             return tag.getString("GunId");
         }
@@ -173,18 +174,20 @@ public class GunBlueprintItem extends Item {
     }
 
     private static ResourceLocation getGunIdForLookup(String storedGunId) {
-        ResourceLocation rl = new ResourceLocation(storedGunId);
+        ResourceLocation rl = ResourceLocation.parse(storedGunId);
         String path = rl.getPath();
         if (path.startsWith("gun/")) {
             path = path.substring(4);
         }
-        return new ResourceLocation(rl.getNamespace(), path);
+        return ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), path);
     }
 
     public static ItemStack createBlueprint(Item blueprintItem, ResourceLocation gunId) {
         ItemStack stack = new ItemStack(blueprintItem);
-        CompoundTag tag = stack.getOrCreateTag();
+
+        CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         tag.putString("GunId", gunId.toString());
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return stack;
     }
 }

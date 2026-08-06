@@ -2,8 +2,8 @@ package com.raiiiden.taczblueprints.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.raiiiden.taczblueprints.capability.GunUnlocksProvider;
-import com.raiiiden.taczblueprints.capability.IGunUnlocks;
+import com.raiiiden.taczblueprints.attachment.GunUnlocksProvider;
+import com.raiiiden.taczblueprints.attachment.IGunUnlocks;
 import com.raiiiden.taczblueprints.network.ModNetworking;
 import com.raiiiden.taczblueprints.network.SyncUnlockedGunsPacket;
 import net.minecraft.commands.CommandSourceStack;
@@ -11,7 +11,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.common.util.LazyOptional;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,45 +23,26 @@ public class BlueprintCommands {
                 .then(Commands.literal("list")
                         .executes(context -> {
                             ServerPlayer player = context.getSource().getPlayerOrException();
-                            LazyOptional<IGunUnlocks> unlocksOpt = GunUnlocksProvider.get(player);
-
-                            if (unlocksOpt.isPresent()) {
-                                IGunUnlocks unlocks = unlocksOpt.orElseThrow(() ->
-                                        new IllegalStateException("Player does not have GunUnlocks capability!")
-                                );
-
-                                if (unlocks.getUnlockedGuns().isEmpty()) {
-                                    player.sendSystemMessage(Component.literal("§eYou have no unlocked blueprints."));
-                                } else {
-                                    player.sendSystemMessage(Component.literal("§aUnlocked blueprints:"));
-                                    for (String gunId : unlocks.getUnlockedGuns()) {
-                                        player.sendSystemMessage(Component.literal(" - " + gunId));
-                                    }
-                                }
+                            IGunUnlocks unlocks = GunUnlocksProvider.get(player);
+                            if (unlocks.getUnlockedGuns().isEmpty()) {
+                                player.sendSystemMessage(Component.literal("§eYou have no unlocked blueprints."));
                             } else {
-                                player.sendSystemMessage(Component.literal("§cCould not access your blueprints capability."));
+                                player.sendSystemMessage(Component.literal("§aUnlocked blueprints:"));
+                                for (String gunId : unlocks.getUnlockedGuns()) {
+                                    player.sendSystemMessage(Component.literal(" - " + gunId));
+                                }
                             }
-
                             return Command.SINGLE_SUCCESS;
                         }))
                 // Clear own unlocked guns
                 .then(Commands.literal("clear")
                         .executes(context -> {
                             ServerPlayer player = context.getSource().getPlayerOrException();
-                            LazyOptional<IGunUnlocks> unlocksOpt = GunUnlocksProvider.get(player);
+                            IGunUnlocks unlocks = GunUnlocksProvider.get(player);
+                            unlocks.clearAll();
+                            ModNetworking.sendToPlayer(player, new SyncUnlockedGunsPacket(unlocks.getUnlockedGuns()));
 
-                            if (unlocksOpt.isPresent()) {
-                                IGunUnlocks unlocks = unlocksOpt.orElseThrow(() ->
-                                        new IllegalStateException("Player does not have GunUnlocks capability!")
-                                );
-
-                                unlocks.clearAll();
-                                ModNetworking.sendToPlayer(player, new SyncUnlockedGunsPacket(unlocks.getUnlockedGuns()));
-
-                                player.sendSystemMessage(Component.literal("§cAll unlocked blueprints cleared."));
-                            } else {
-                                player.sendSystemMessage(Component.literal("§cCould not access your blueprints capability."));
-                            }
+                            player.sendSystemMessage(Component.literal("§cAll unlocked blueprints cleared."));
 
                             return Command.SINGLE_SUCCESS;
                         })
@@ -75,15 +55,10 @@ public class BlueprintCommands {
 
                                     int clearedCount = 0;
                                     for (ServerPlayer player : players) {
-                                        LazyOptional<IGunUnlocks> unlocksOpt = GunUnlocksProvider.get(player);
-                                        if (unlocksOpt.isPresent()) {
-                                            IGunUnlocks unlocks = unlocksOpt.orElseThrow(() ->
-                                                    new IllegalStateException("Player does not have GunUnlocks capability!")
-                                            );
-                                            unlocks.clearAll();
-                                            ModNetworking.sendToPlayer(player, new SyncUnlockedGunsPacket(new HashSet<>()));
-                                            clearedCount++;
-                                        }
+                                        IGunUnlocks unlocks = GunUnlocksProvider.get(player);
+                                        unlocks.clearAll();
+                                        ModNetworking.sendToPlayer(player, new SyncUnlockedGunsPacket(new HashSet<>()));
+                                        clearedCount++;
                                     }
 
                                     final int finalClearedCount = clearedCount;
@@ -101,27 +76,19 @@ public class BlueprintCommands {
                                     CommandSourceStack source = context.getSource();
                                     ServerPlayer targetPlayer = EntityArgument.getPlayer(context, "player");
 
-                                    LazyOptional<IGunUnlocks> unlocksOpt = GunUnlocksProvider.get(targetPlayer);
-                                    if (unlocksOpt.isPresent()) {
-                                        IGunUnlocks unlocks = unlocksOpt.orElseThrow(() ->
-                                                new IllegalStateException("Player does not have GunUnlocks capability!")
-                                        );
-                                        unlocks.clearAll();
-                                        ModNetworking.sendToPlayer(targetPlayer, new SyncUnlockedGunsPacket(new HashSet<>()));
+                                    IGunUnlocks unlocks = GunUnlocksProvider.get(targetPlayer);
+                                    unlocks.clearAll();
+                                    ModNetworking.sendToPlayer(targetPlayer, new SyncUnlockedGunsPacket(new HashSet<>()));
 
-                                        source.sendSuccess(
-                                                () -> Component.literal("§aCleared blueprints for " + targetPlayer.getName().getString()),
-                                                true
-                                        );
+                                    source.sendSuccess(
+                                            () -> Component.literal("§aCleared blueprints for " + targetPlayer.getName().getString()),
+                                            true
+                                    );
 
-                                        targetPlayer.displayClientMessage(
-                                                Component.literal("§eYour gun blueprints have been cleared by an administrator"),
-                                                false
-                                        );
-                                    } else {
-                                        source.sendFailure(Component.literal("§cCould not access player's blueprints capability."));
-                                    }
-
+                                    targetPlayer.displayClientMessage(
+                                            Component.literal("§eYour gun blueprints have been cleared by an administrator"),
+                                            false
+                                    );
                                     return Command.SINGLE_SUCCESS;
                                 })));
     }

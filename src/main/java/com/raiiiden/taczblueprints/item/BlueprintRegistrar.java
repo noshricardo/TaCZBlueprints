@@ -9,20 +9,21 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
 
 import java.util.*;
 
 public class BlueprintRegistrar {
 
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(
-            net.minecraftforge.registries.ForgeRegistries.ITEMS,
+            Registries.ITEM,
             TaCZBlueprints.MODID
     );
 
@@ -35,31 +36,31 @@ public class BlueprintRegistrar {
     private static final Map<ResourceLocation, String> GUN_TYPE_CACHE = new HashMap<>();
     private static final List<ResourceLocation> ALL_GUN_IDS = new ArrayList<>();
 
-    public static final RegistryObject<Item> BLUEPRINT_PISTOL = ITEMS.register("blueprint_pistol",
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_PISTOL = ITEMS.register("blueprint_pistol",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Pistol"));
 
-    public static final RegistryObject<Item> BLUEPRINT_SMG = ITEMS.register("blueprint_smg",
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_SMG = ITEMS.register("blueprint_smg",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Smg"));
 
-    public static final RegistryObject<Item> BLUEPRINT_RIFLE = ITEMS.register("blueprint_rifle",
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_RIFLE = ITEMS.register("blueprint_rifle",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Rifle"));
 
-    public static final RegistryObject<Item> BLUEPRINT_SHOTGUN = ITEMS.register("blueprint_shotgun",
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_SHOTGUN = ITEMS.register("blueprint_shotgun",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Shotgun"));
 
-    public static final RegistryObject<Item> BLUEPRINT_SNIPER = ITEMS.register("blueprint_sniper",
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_SNIPER = ITEMS.register("blueprint_sniper",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Sniper"));
 
-    public static final RegistryObject<Item> BLUEPRINT_MG = ITEMS.register("blueprint_mg",
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_MG = ITEMS.register("blueprint_mg",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Mg"));
 
-    public static final RegistryObject<Item> BLUEPRINT_RPG = ITEMS.register("blueprint_rpg",
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_RPG = ITEMS.register("blueprint_rpg",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Rpg"));
 
-    public static final RegistryObject<Item> BLUEPRINT_DEFAULT = ITEMS.register("blueprint_default",
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_DEFAULT = ITEMS.register("blueprint_default",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Gun"));
 
-    private static final Map<String, RegistryObject<Item>> TYPE_TO_BLUEPRINT = new HashMap<>();
+    private static final Map<String, DeferredHolder<Item, GunBlueprintItem>> TYPE_TO_BLUEPRINT = new HashMap<String, DeferredHolder<Item, GunBlueprintItem>>();
 
     static {
         TYPE_TO_BLUEPRINT.put("Pistol", BLUEPRINT_PISTOL);
@@ -71,7 +72,7 @@ public class BlueprintRegistrar {
         TYPE_TO_BLUEPRINT.put("Rpg", BLUEPRINT_RPG);
     }
 
-    public static final RegistryObject<CreativeModeTab> BLUEPRINT_TAB = CREATIVE_MODE_TABS.register("blueprints",
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BLUEPRINT_TAB = CREATIVE_MODE_TABS.register("blueprints",
             () -> CreativeModeTab.builder()
                     .title(Component.literal("TaCZ Blueprints"))
                     .icon(() -> new ItemStack(BLUEPRINT_DEFAULT.get()))
@@ -120,10 +121,11 @@ public class BlueprintRegistrar {
                     .build()
     );
 
-    public static void register() {
-        ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
-        CREATIVE_MODE_TABS.register(FMLJavaModLoadingContext.get().getModEventBus());
-        MinecraftForge.EVENT_BUS.register(BlueprintRegistrar.class);
+    public static void register(IEventBus modEventBus) {
+        ITEMS.register(modEventBus);
+        CREATIVE_MODE_TABS.register(modEventBus);
+        //modEventBus.register(BlueprintRegistrar.class);
+        NeoForge.EVENT_BUS.register(BlueprintRegistrar.class);
         TaCZBlueprints.LOGGER.info("[{}] Blueprint registry initialized", TaCZBlueprints.MODID);
     }
 
@@ -158,7 +160,7 @@ public class BlueprintRegistrar {
 
                 // Normalize ID to include "gun/" prefix
                 if (!id.getPath().startsWith("gun/")) {
-                    id = new ResourceLocation(id.getNamespace(), "gun/" + id.getPath());
+                    id =ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "gun/" + id.getPath());
                 }
 
                 // Cache the gun type
@@ -198,7 +200,7 @@ public class BlueprintRegistrar {
             if (path.startsWith("gun/")) {
                 path = path.substring(4);
             }
-            ResourceLocation lookupId = new ResourceLocation(gunId.getNamespace(), path);
+            ResourceLocation lookupId =ResourceLocation.fromNamespaceAndPath(gunId.getNamespace(), path);
             CommonGunIndex index = resourceProvider.getGunIndex(lookupId);
 
             if (index != null && index.getType() != null && !index.getType().isEmpty()) {
@@ -216,13 +218,13 @@ public class BlueprintRegistrar {
         String type = getGunType(gunId);
 
         // Get the appropriate blueprint item for this type
-        RegistryObject<Item> blueprintItem = TYPE_TO_BLUEPRINT.getOrDefault(type, BLUEPRINT_DEFAULT);
+        DeferredHolder<Item, GunBlueprintItem> blueprintItem = TYPE_TO_BLUEPRINT.getOrDefault(type, BLUEPRINT_DEFAULT);
 
         return GunBlueprintItem.createBlueprint(blueprintItem.get(), gunId);
     }
 
     public static Item getBlueprintItemForType(String type) {
-        RegistryObject<Item> blueprintItem = TYPE_TO_BLUEPRINT.get(type);
+        DeferredHolder<Item, GunBlueprintItem> blueprintItem = TYPE_TO_BLUEPRINT.get(type);
         return blueprintItem != null ? blueprintItem.get() : BLUEPRINT_DEFAULT.get();
     }
 
