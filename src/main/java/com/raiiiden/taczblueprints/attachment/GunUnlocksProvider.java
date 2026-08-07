@@ -36,7 +36,7 @@ public class GunUnlocksProvider {//implements ICapabilitySerializable<CompoundTa
 //    }
 
     public static IGunUnlocks get(Player player) {
-        return player.getData(ModAttachmentTypes.GUN_UNLOCKS);
+        return player.getData(ModAttachmentTypes.UNLOCKS);
     }
 
 //    public void invalidate() {

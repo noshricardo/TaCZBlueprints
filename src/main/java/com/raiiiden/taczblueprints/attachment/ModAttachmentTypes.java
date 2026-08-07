@@ -11,7 +11,7 @@ public class ModAttachmentTypes {
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES =
             DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, TaCZBlueprints.MODID);
 
-    public static final Supplier<AttachmentType<GunUnlocks>> GUN_UNLOCKS = ATTACHMENT_TYPES.register(
+    public static final Supplier<AttachmentType<GunUnlocks>> UNLOCKS = ATTACHMENT_TYPES.register(
             "gun_unlocks",
             () -> AttachmentType.serializable(GunUnlocks::new)
                     .copyOnDeath()

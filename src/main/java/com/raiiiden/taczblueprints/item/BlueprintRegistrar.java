@@ -2,6 +2,7 @@ package com.raiiiden.taczblueprints.item;
 
 import com.raiiiden.taczblueprints.TaCZBlueprints;
 import com.tacz.guns.resource.CommonAssetsManager;
+import com.tacz.guns.resource.index.CommonAttachmentIndex;
 import com.tacz.guns.resource.index.CommonGunIndex;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -35,6 +36,9 @@ public class BlueprintRegistrar {
     // Map to store gun ID -> gun type for when assets aren't available
     private static final Map<ResourceLocation, String> GUN_TYPE_CACHE = new HashMap<>();
     private static final List<ResourceLocation> ALL_GUN_IDS = new ArrayList<>();
+
+    private static final Map<ResourceLocation, String> ATTACHMENT_TYPE_CACHE = new HashMap<>();
+    private static final List<ResourceLocation> ALL_ATTACHMENT_IDS = new ArrayList<>();
 
     public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_PISTOL = ITEMS.register("blueprint_pistol",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Pistol"));
@@ -70,15 +74,17 @@ public class BlueprintRegistrar {
         TYPE_TO_BLUEPRINT.put("Sniper", BLUEPRINT_SNIPER);
         TYPE_TO_BLUEPRINT.put("Mg", BLUEPRINT_MG);
         TYPE_TO_BLUEPRINT.put("Rpg", BLUEPRINT_RPG);
+
     }
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BLUEPRINT_TAB = CREATIVE_MODE_TABS.register("blueprints",
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BLUEPRINT_TAB = CREATIVE_MODE_TABS.register("gun_blueprints",
             () -> CreativeModeTab.builder()
-                    .title(Component.literal("TaCZ Blueprints"))
+                    .title(Component.literal("TaCZ Gun Blueprints"))
                     .icon(() -> new ItemStack(BLUEPRINT_DEFAULT.get()))
                     .displayItems((params, output) -> {
                         // ALWAYS try to populate when the tab is displayed
                         populateGunsFromResourceProvider();
+                        populateAttachmentsFromResourceProvider();
 
                         // If still empty after trying, don't show anything
                         if (ALL_GUN_IDS.isEmpty()) {
@@ -121,6 +127,56 @@ public class BlueprintRegistrar {
                     .build()
     );
 
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BLUEPRINT_ATTACHMENTS_TAB = CREATIVE_MODE_TABS.register("attachment_blueprints",
+            () -> CreativeModeTab.builder()
+                    .title(Component.literal("TaCZ Attachments Blueprints"))
+                    .icon(() -> new ItemStack(BLUEPRINT_DEFAULT.get()))
+                    .displayItems((params, output) -> {
+                        // ALWAYS try to populate when the tab is displayed
+                        populateGunsFromResourceProvider();
+                        populateAttachmentsFromResourceProvider();
+
+                        // If still empty after trying, don't show anything
+                        if (ALL_ATTACHMENT_IDS.isEmpty()) {
+                            TaCZBlueprints.LOGGER.warn("[{}] No guns available for blueprint tab", TaCZBlueprints.MODID);
+                            return;
+                        }
+
+                        List<String> typeOrder = Arrays.asList("Sniper", "Mg", "Rifle", "Shotgun", "Smg", "Pistol", "Rpg");
+                        Map<String, List<ResourceLocation>> gunsByType = new HashMap<>();
+
+                        // Group guns by their cached type
+                        for (ResourceLocation gunId : ALL_ATTACHMENT_IDS) {
+                            String type = ATTACHMENT_TYPE_CACHE.getOrDefault(gunId, "Gun");
+                            gunsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(gunId);
+                        }
+
+                        // Display guns by preferred order
+                        for (String type : typeOrder) {
+                            List<ResourceLocation> ids = gunsByType.get(type);
+                            if (ids != null) {
+                                ids.sort(Comparator.comparing(ResourceLocation::getPath));
+                                for (ResourceLocation id : ids) {
+                                    output.accept(createBlueprintForGun(id));
+                                }
+                            }
+                        }
+
+                        // Display any leftover types
+                        gunsByType.keySet().stream()
+                                .filter(type -> !typeOrder.contains(type))
+                                .sorted()
+                                .forEach(type -> {
+                                    List<ResourceLocation> ids = gunsByType.get(type);
+                                    ids.sort(Comparator.comparing(ResourceLocation::getPath));
+                                    for (ResourceLocation id : ids) {
+                                        output.accept(createBlueprintForGun(id));
+                                    }
+                                });
+                    })
+                    .build()
+    );
+
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
@@ -132,11 +188,13 @@ public class BlueprintRegistrar {
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
         populateGunsFromResourceProvider();
+        populateAttachmentsFromResourceProvider();
     }
 
     @SubscribeEvent
     public static void onDatapackSync(OnDatapackSyncEvent event) {
         populateGunsFromResourceProvider();
+        populateAttachmentsFromResourceProvider();
     }
 
     /**
@@ -174,6 +232,43 @@ public class BlueprintRegistrar {
             }
 
             TaCZBlueprints.LOGGER.info("[{}] Loaded {} guns for blueprints", TaCZBlueprints.MODID, ALL_GUN_IDS.size());
+        } catch (Exception e) {
+            TaCZBlueprints.LOGGER.error("[{}] Failed to populate gun IDs", TaCZBlueprints.MODID, e);
+        }
+    }
+
+    private static void populateAttachmentsFromResourceProvider() {
+        var resourceProvider = CommonAssetsManager.get();
+
+        ALL_ATTACHMENT_IDS.clear();
+        ATTACHMENT_TYPE_CACHE.clear();
+
+        if (resourceProvider == null) {
+            TaCZBlueprints.LOGGER.debug("[{}] Resource provider not available yet", TaCZBlueprints.MODID);
+            return;
+        }
+
+        try {
+            for (var entry : resourceProvider.getAllAttachments()) {
+                ResourceLocation id = entry.getKey();
+                CommonAttachmentIndex index = entry.getValue();
+
+                // Normalize ID to include "gun/" prefix
+                if (!id.getPath().startsWith("attachment/")) {
+                    id =ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "attachment/" + id.getPath());
+                }
+
+                // Cache the gun type
+                String type = "Attachment";
+                if (index != null && index.getType() != null && !index.getType().getSerializedName().isEmpty()) {
+                    type = capitalize(index.getType().getSerializedName());
+                }
+
+                ALL_ATTACHMENT_IDS.add(id);
+                ATTACHMENT_TYPE_CACHE.put(id, type);
+            }
+
+            TaCZBlueprints.LOGGER.info("[{}] Loaded {} guns for blueprints", TaCZBlueprints.MODID, ALL_ATTACHMENT_IDS.size());
         } catch (Exception e) {
             TaCZBlueprints.LOGGER.error("[{}] Failed to populate gun IDs", TaCZBlueprints.MODID, e);
         }

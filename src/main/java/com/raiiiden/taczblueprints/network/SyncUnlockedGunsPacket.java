@@ -1,6 +1,5 @@
 package com.raiiiden.taczblueprints.network;
 
-import com.raiiiden.taczblueprints.attachment.GunUnlocksProvider;
 import com.raiiiden.taczblueprints.attachment.IGunUnlocks;
 import com.raiiiden.taczblueprints.attachment.ModAttachmentTypes;
 import net.minecraft.client.Minecraft;
@@ -15,7 +14,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Supplier;
 
 public record SyncUnlockedGunsPacket(Set<String> unlockedGuns) implements CustomPacketPayload{
 
@@ -29,13 +27,6 @@ public record SyncUnlockedGunsPacket(Set<String> unlockedGuns) implements Custom
             SyncUnlockedGunsPacket::new
     );
 
-//    public static void encode(SyncUnlockedGunsPacket pkt, FriendlyByteBuf buf) {
-//        buf.writeInt(pkt.unlockedGuns.size());
-//        for (String gunId : pkt.unlockedGuns) {
-//            buf.writeUtf(gunId);
-//        }
-//    }
-//
     public static SyncUnlockedGunsPacket decode(FriendlyByteBuf buf) {
         int size = buf.readInt();
         Set<String> guns = new HashSet<>();
@@ -53,7 +44,7 @@ public record SyncUnlockedGunsPacket(Set<String> unlockedGuns) implements Custom
                 return;
             }
             // Wait for capability to be attached before updating
-            IGunUnlocks unlocks = mc.player.getData(ModAttachmentTypes.GUN_UNLOCKS);
+            IGunUnlocks unlocks = mc.player.getData(ModAttachmentTypes.UNLOCKS);
             unlocks.setUnlockedGuns(pkt.unlockedGuns);
             // TaCZBlueprints.LOGGER.info("[Blueprint] Client synced {} unlocked guns", pkt.unlockedGuns.size());
 

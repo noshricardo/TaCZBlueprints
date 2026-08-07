@@ -1,7 +1,6 @@
 package com.raiiiden.taczblueprints.mixin;
 
 import com.raiiiden.taczblueprints.TaCZBlueprints;
-import com.raiiiden.taczblueprints.attachment.GunUnlocksProvider;
 import com.raiiiden.taczblueprints.attachment.IGunUnlocks;
 import com.raiiiden.taczblueprints.attachment.ModAttachmentTypes;
 import com.raiiiden.taczblueprints.config.BlueprintConfig;
@@ -13,7 +12,6 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -21,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -54,7 +51,7 @@ public class MixinGunSmithTableScreen {
             if (recipes == null) return;
 
             RecipeManager recipeManager = mc.level.getRecipeManager();
-            IGunUnlocks unlocks = mc.player.getData(ModAttachmentTypes.GUN_UNLOCKS);
+            IGunUnlocks unlocks = mc.player.getData(ModAttachmentTypes.UNLOCKS);
 
 
                 Set<String> unlockedGuns = unlocks.getUnlockedGuns();

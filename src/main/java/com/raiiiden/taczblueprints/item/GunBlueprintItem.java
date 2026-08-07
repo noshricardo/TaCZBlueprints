@@ -6,6 +6,8 @@ import com.raiiiden.taczblueprints.attachment.IGunUnlocks;
 import com.raiiiden.taczblueprints.network.ModNetworking;
 import com.raiiiden.taczblueprints.network.SyncUnlockedGunsPacket;
 import com.tacz.guns.resource.CommonAssetsManager;
+import com.tacz.guns.resource.index.CommonAmmoIndex;
+import com.tacz.guns.resource.index.CommonAttachmentIndex;
 import com.tacz.guns.resource.index.CommonGunIndex;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.component.DataComponents;
@@ -129,12 +131,33 @@ public class GunBlueprintItem extends Item {
             }
 
             ResourceLocation lookupId = getGunIdForLookup(storedGunId);
-            CommonGunIndex index = resourceProvider.getGunIndex(lookupId);
 
-            if (index != null && index.getPojo() != null && index.getPojo().getName() != null && !index.getPojo().getName().isEmpty()) {
-                String translationKey = index.getPojo().getName();
-                return Component.translatable(translationKey);
+
+            if(resourceProvider.getGunIndex(lookupId) != null) {
+                CommonGunIndex index = resourceProvider.getGunIndex(lookupId);
+                if (index != null && index.getPojo() != null && index.getPojo().getName() != null && !index.getPojo().getName().isEmpty()) {
+                    String translationKey = index.getPojo().getName();
+                    return Component.translatable(translationKey);
+                }
+            }else if (resourceProvider.getAttachmentIndex(lookupId) != null){
+                CommonAttachmentIndex index = resourceProvider.getAttachmentIndex(lookupId);
+                if (index != null && index.getPojo() != null && index.getPojo().getName() != null && !index.getPojo().getName().isEmpty()) {
+                    String translationKey = index.getPojo().getName();
+                    return Component.translatable(translationKey);
+                }
+            }else if(resourceProvider.getAmmoIndex(lookupId) != null){
+                CommonAmmoIndex index = resourceProvider.getAmmoIndex(lookupId);
+                if (index != null && index.getPojo() != null && index.getPojo().getName() != null && !index.getPojo().getName().isEmpty()) {
+                    String translationKey = index.getPojo().getName();
+                    return Component.translatable(translationKey);
+                }
             }
+
+
+
+
+
+
         } catch (Exception e) {
             TaCZBlueprints.LOGGER.debug("[Blueprint] Could not get gun display name for: {}", storedGunId);
         }
@@ -178,6 +201,10 @@ public class GunBlueprintItem extends Item {
         String path = rl.getPath();
         if (path.startsWith("gun/")) {
             path = path.substring(4);
+        } else if (path.startsWith("attachment/")){
+            path = path.substring(11);
+        } else if (path.startsWith("ammo/")){
+            path = path.substring(5);
         }
         return ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), path);
     }
