@@ -108,18 +108,18 @@ public class GunBlueprintItem extends Item {
         return Component.literal(gunType + " Blueprint");
     }
 
-//    @Override
-//    public void appendHoverText(ItemStack stack, Level world, List<Component> tooltip, TooltipFlag flag) {
-//        String storedGunId = getGunId(stack);
-//        if (storedGunId == null || storedGunId.isEmpty()) {
-//            return;
-//        }
-//
-//        Component gunDisplayName = tryGetGunDisplayName(storedGunId);
-//        if (gunDisplayName != null) {
-//            tooltip.add(gunDisplayName.copy().withStyle(style -> style.withColor(0x808080)));
-//        }
-//    }
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        String storedGunId = getGunId(stack);
+        if (storedGunId == null || storedGunId.isEmpty()) {
+            return;
+        }
+
+        Component gunDisplayName = tryGetGunDisplayName(storedGunId);
+        if (gunDisplayName != null) {
+            tooltip.add(gunDisplayName.copy().withStyle(style -> style.withColor(0x808080)));
+        }
+    }
 
     private static Component tryGetGunDisplayName(String storedGunId) {
         try {
