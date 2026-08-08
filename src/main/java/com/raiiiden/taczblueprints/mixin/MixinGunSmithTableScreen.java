@@ -84,18 +84,24 @@ public class MixinGunSmithTableScreen {
 
                     CompoundTag tag = customData != null ? customData.copyTag() : null;
                     String nbtGunId = (tag != null && tag.contains("GunId")) ? tag.getString("GunId") : null;
+                    nbtGunId = (tag != null && tag.contains("AttachmentId")) ? tag.getString("AttachmentId") : nbtGunId;
+                    nbtGunId = (tag != null && tag.contains("AmmoId")) ? tag.getString("AmmoId") : nbtGunId;
 
                     // Normalize gun ID
                     String normalizedGunId = null;
                     if (nbtGunId != null && !nbtGunId.isEmpty()) {
                         ResourceLocation rl =ResourceLocation.parse(nbtGunId);
                         String path = rl.getPath();
-                        if (!path.startsWith("gun/")) path = "gun/" + path;
+                        if (!path.startsWith("gun/") && tag.contains("GunId")) path = "gun/" + path;
+                        if (!path.startsWith("attachment/") && tag.contains("AttachmentId")) path = "attachment/" + path;
+                        if (!path.startsWith("ammo/") && tag.contains("AmmoId")) path = "ammo/" + path;
                         normalizedGunId =ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), path).toString();
                     } else if (!"null".equals(baseItem)) {
                         ResourceLocation rl =ResourceLocation.parse(baseItem);
                         String path = rl.getPath();
-                        if (!path.startsWith("gun/")) path = "gun/" + path;
+                        if (!path.startsWith("gun/") && tag.contains("GunId")) path = "gun/" + path;
+                        if (!path.startsWith("attachment/") && tag.contains("AttachmentId")) path = "attachment/" + path;
+                        if (!path.startsWith("ammo/") && tag.contains("AmmoId")) path = "ammo/" + path;
                         normalizedGunId =ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), path).toString();
                     }
 
@@ -110,10 +116,10 @@ public class MixinGunSmithTableScreen {
                         }
                     } else if (item instanceof IAttachment && !enableAttachmentTable) {
                         remove = true;
-                        if (!enabledAttachments.isEmpty() && enabledAttachments.contains(baseItem)) remove = false;
+                        if (!enabledAttachments.isEmpty() && enabledAttachments.contains(baseItem) || unlockedGuns.contains(normalizedGunId)) remove = false;
                     } else if (item instanceof IAmmo && !enableAmmoTable) {
                         remove = true;
-                        if (!enabledAmmo.isEmpty() && enabledAmmo.contains(baseItem)) remove = false;
+                        if (!enabledAmmo.isEmpty() && enabledAmmo.contains(baseItem) || unlockedGuns.contains(normalizedGunId)) remove = false;
                     }
 
                     if (remove) {
