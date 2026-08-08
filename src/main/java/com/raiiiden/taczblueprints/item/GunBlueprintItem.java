@@ -192,6 +192,10 @@ public class GunBlueprintItem extends Item {
         CompoundTag tag = customData != null ? customData.copyTag() : null;
         if (tag != null && tag.contains("GunId")) {
             return tag.getString("GunId");
+        } else if (tag != null && tag.contains("AttachmentId")) {
+            return tag.getString("AttachmentId");
+        } else if (tag != null && tag.contains("AmmoId")) {
+            return tag.getString("AmmoId");
         }
         return null;
     }

@@ -6,6 +6,8 @@ import com.mojang.math.Axis;
 import com.raiiiden.taczblueprints.TaCZBlueprints;
 import com.raiiiden.taczblueprints.item.GunBlueprintItem;
 import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.client.resource.index.ClientAmmoIndex;
+import com.tacz.guns.client.resource.index.ClientAttachmentIndex;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -20,6 +22,8 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 import javax.annotation.Nonnull;
+import javax.swing.text.html.Option;
+import java.sql.Time;
 import java.util.Optional;
 
 public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
@@ -231,10 +235,18 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
     private ResourceLocation getGunSlotTexture(String gunId) {
         try {
             ResourceLocation lookupId = getGunIdForLookup(gunId);
+            Optional<ClientAmmoIndex> ammoIndex = TimelessAPI.getClientAmmoIndex(lookupId);
             Optional<ClientGunIndex> gunIndex = TimelessAPI.getClientGunIndex(lookupId);
+            Optional<ClientAttachmentIndex> attachmentIndex = TimelessAPI.getClientAttachmentIndex(lookupId);
 
             if (gunIndex.isPresent()) {
                 ResourceLocation slotTexture = gunIndex.get().getDefaultDisplay().getSlotTexture();
+                return slotTexture;
+            } else if (ammoIndex.isPresent()) {
+                ResourceLocation slotTexture = ammoIndex.get().getSlotTextureLocation();
+                return slotTexture;
+            } else if (attachmentIndex.isPresent()){
+                ResourceLocation slotTexture = attachmentIndex.get().getSlotTexture();
                 return slotTexture;
             } else {
                 TaCZBlueprints.LOGGER.warn("[Blueprint] No ClientGunIndex found for: {}", lookupId);

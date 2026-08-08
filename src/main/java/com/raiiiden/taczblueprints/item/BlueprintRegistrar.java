@@ -403,7 +403,7 @@ public class BlueprintRegistrar {
         String type = getGunType(gunId);
 
         // Get the appropriate blueprint item for this type
-        DeferredHolder<Item, GunBlueprintItem> blueprintItem = TYPE_TO_BLUEPRINT.getOrDefault(type, BLUEPRINT_DEFAULT);
+        DeferredHolder<Item, GunBlueprintItem> blueprintItem = TYPE_TO_BLUEPRINT.getOrDefault(type, BLUEPRINT_PISTOL);
 
         return GunBlueprintItem.createBlueprint(blueprintItem.get(), gunId);
     }
