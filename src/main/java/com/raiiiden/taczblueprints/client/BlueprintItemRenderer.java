@@ -62,7 +62,7 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
             float baseZLevel = 0.0f;
             float overlayZLevel = baseZLevel + 0.01f;
             float baseScale = 1.0f;
-            float overlayScale = 0.45f;
+            float overlayScale = 0.5f;
 
             renderTexturedQuad(poseStack, buffer, light, overlay, baseTexture,
                     baseZLevel, 0.0f, 0.0f, baseScale, displayContext, true, false);
@@ -71,11 +71,11 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
                     overlayZLevel, 0.0f, 0.0f, overlayScale, displayContext, true, false);
 
         } else {
-            int light = packedLight;
+            int light = packedLight + 200;
             float baseZLevel = 0.0f;
             float overlayZLevel = baseZLevel + 0.01f;
             float baseScale = 1.0f;
-            float overlayScale = 0.45f;
+            float overlayScale = 0.5f;
 
             // Apply transforms based on display context
             if (displayContext == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND) {
@@ -263,6 +263,10 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
         String path = rl.getPath();
         if (path.startsWith("gun/")) {
             path = path.substring(4);
+        } else if (path.startsWith("attachment/")) {
+            path = path.substring(11);
+        } else if (path.startsWith("ammo/")) {
+            path = path.substring(5);
         }
         return ResourceLocation.fromNamespaceAndPath(rl.getNamespace(), path);
     }

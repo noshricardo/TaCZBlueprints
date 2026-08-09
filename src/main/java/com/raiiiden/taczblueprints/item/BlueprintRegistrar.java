@@ -65,6 +65,9 @@ public class BlueprintRegistrar {
     public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_RPG = ITEMS.register("blueprint_rpg",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Rpg"));
 
+//    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_AMMO = ITEMS.register("blueprint_ammo",
+//            () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Ammo"));
+
     public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_DEFAULT = ITEMS.register("blueprint_default",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Gun"));
 
@@ -78,6 +81,7 @@ public class BlueprintRegistrar {
         TYPE_TO_BLUEPRINT.put("Sniper", BLUEPRINT_SNIPER);
         TYPE_TO_BLUEPRINT.put("Mg", BLUEPRINT_MG);
         TYPE_TO_BLUEPRINT.put("Rpg", BLUEPRINT_RPG);
+//        TYPE_TO_BLUEPRINT.put("Ammo", BLUEPRINT_AMMO);
 
     }
 
