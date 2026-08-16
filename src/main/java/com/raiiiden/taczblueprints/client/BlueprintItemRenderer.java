@@ -227,6 +227,10 @@ public class BlueprintItemRenderer extends BlockEntityWithoutLevelRenderer {
             return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_mg.png");
         } else if (itemName.contains("rpg")) {
             return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_rpg.png");
+        } else if (itemName.contains("ammo")) {
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_ammo.png");
+        } else if (itemName.contains("attachment")) {
+            return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_attachment.png");
         }
 
         return ResourceLocation.fromNamespaceAndPath("taczblueprints", "textures/item/blueprint_default.png");

@@ -65,8 +65,11 @@ public class BlueprintRegistrar {
     public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_RPG = ITEMS.register("blueprint_rpg",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Rpg"));
 
-//    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_AMMO = ITEMS.register("blueprint_ammo",
-//            () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Ammo"));
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_AMMO = ITEMS.register("blueprint_ammo",
+            () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Ammo"));
+
+    public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_ATTACHMENT = ITEMS.register("blueprint_attachment",
+            () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Attachment"));
 
     public static final DeferredHolder<Item, GunBlueprintItem> BLUEPRINT_DEFAULT = ITEMS.register("blueprint_default",
             () -> new GunBlueprintItem(new Item.Properties().stacksTo(1), "Gun"));
@@ -81,8 +84,8 @@ public class BlueprintRegistrar {
         TYPE_TO_BLUEPRINT.put("Sniper", BLUEPRINT_SNIPER);
         TYPE_TO_BLUEPRINT.put("Mg", BLUEPRINT_MG);
         TYPE_TO_BLUEPRINT.put("Rpg", BLUEPRINT_RPG);
-//        TYPE_TO_BLUEPRINT.put("Ammo", BLUEPRINT_AMMO);
-
+        TYPE_TO_BLUEPRINT.put("Ammo", BLUEPRINT_AMMO);
+        TYPE_TO_BLUEPRINT.put("Attachment", BLUEPRINT_ATTACHMENT);
     }
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BLUEPRINT_TAB = CREATIVE_MODE_TABS.register("gun_blueprints",
@@ -148,7 +151,7 @@ public class BlueprintRegistrar {
                             return;
                         }
 
-                        List<String> typeOrder = Arrays.asList("Sniper", "Mg", "Rifle", "Shotgun", "Smg", "Pistol", "Rpg");
+                        List<String> typeOrder = Arrays.asList("Scope", "Stock", "Muzzle", "Laser", "Extended_mag", "Grip", "Rpg");
                         Map<String, List<ResourceLocation>> gunsByType = new HashMap<>();
 
                         // Group guns by their cached type
@@ -380,6 +383,10 @@ public class BlueprintRegistrar {
         // Check cache first
         if (GUN_TYPE_CACHE.containsKey(gunId)) {
             return GUN_TYPE_CACHE.get(gunId);
+        } else if (ATTACHMENT_TYPE_CACHE.containsKey(gunId)){
+            return "Attachment";
+        } else if (AMMO_TYPE_CACHE.containsKey(gunId)){
+            return "Ammo";
         }
 
         // Try to look up from resource provider

@@ -1,0 +1,6 @@
+{
+  "parent": "builtin/entity",
+  "textures": {
+    "particle": "taczblueprints:item/blueprint_ammo"
+  }
+}
